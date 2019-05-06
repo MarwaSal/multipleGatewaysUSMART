@@ -56,9 +56,13 @@ class USMARTSensorDaemon extends UnetAgent {
   File framesTimeStamp = new File('.','timeStamp.txt')  
   File Gateway = new File('.','nodeGateway.txt')
   String line
+   int pSensing = 0
+  int nSlots = 0
  
-   USMARTSensorDaemon(myGateway) {
-    this.myGateway= myGateway                       
+   USMARTSensorDaemon(myGateway, int pSensing=0, int nSlots=100) {
+    this.myGateway= myGateway 
+    this.pSensing = pSensing                        
+    this.nSlots = nSlots                              
    }                                
   
   void startup() {
@@ -80,7 +84,7 @@ class USMARTSensorDaemon extends UnetAgent {
     phy = agentForService Services.PHYSICAL
     subscribe topic(phy)
     duration = Math.round(((phy[Physical.DATA].frameDuration) *1000 ))
-    
+    RAC(myGateway, pSensing, nSlots)
   
 
   }
@@ -134,9 +138,10 @@ class USMARTSensorDaemon extends UnetAgent {
       def phy = agentForService Services.PHYSICAL
       //in single gateway secnario nodes send to gatway 1 which is located in the middle of the surface
       def txReq = new DatagramReq(recipient: msg.sender, to: myGateway, protocol: Protocol.DATA);
-      def duration = 62  // TO-DO: Math.round(1000*phy[0].frameDuration)   // duration in ms
+      def Tp = 0.3675 *1000  // packet duration in ms
+      def T = ((int)Math.ceil(0.3675*nslots))*1000 // simulation time in ms
       //println("Frame duration is "+phy[0].frameDuration+" [sec] , i.e. " + duration +" [ms]")
-       println("Frame duration is "+phy[Physical.DATA].frameDuration+" [sec] , i.e. " + duration +" [ms]")
+       println("Frame duration is "+phy[Physical.DATA].frameDuration+" [sec] without header and correction , i.e. " + Tp +" [ms]")
        
       //def busy = phy.busy
       //if (busy == null) log.warning 'BUSY FAILED!'
@@ -150,10 +155,11 @@ class USMARTSensorDaemon extends UnetAgent {
          //println("random of " + myAddress +" is " +rn)
          
          if (rn <= p) {
-           def bo = AgentLocalRandom.current().nextInt(nslots)+1
+        //   def bo = AgentLocalRandom.current().nextInt(nslots)+1
+        def bo = AgentLocalRandom.current().nextDouble(0,(T-Tp)+1)
            //def bo = myAddress;
            //println("sending data from " + myAddress +" at time " +bo*duration +" ms")
-           add new BackoffBehavior(bo*duration, {
+           add new BackoffBehavior(bo, {
               def busy1 = phy.busy
              if (busy1 == null) log.info 'BUSY FAILED!'
               else if (busy1) {
@@ -264,6 +270,62 @@ T4: 1532242546248dtD: 41.647 in (2000.0, 2000.0, -500.0 )
          
     }
    
+  }
+
+
+  void RAC(MyGateway, pSensing, nSlots){
+  
+      def p = pSensing/100.0
+     
+             
+      def phy = agentForService Services.PHYSICAL
+      //in single gateway secnario nodes send to gatway 1 which is located in the middle of the surface
+      def txReq = new DatagramReq( to: myGateway, protocol: Protocol.DATA)
+      def Tp = 0.3675 *1000  // packet duration in ms
+      def T = ((int)Math.ceil(0.3675*nSlots))*1000 // simulation time in ms
+      //println("Frame duration is "+phy[0].frameDuration+" [sec] , i.e. " + duration +" [ms]")
+       println("Node "+myAddress+" Frame duration is "+phy[Physical.DATA].frameDuration+" [sec] without header and correction , i.e. " + Tp +" [ms]")
+       
+      //def busy = phy.busy
+      //if (busy == null) log.warning 'BUSY FAILED!'
+      //if (!busy) {
+         // send it if modem is not TX/RX
+      //   def rsp = phy << txReq
+      //   if (rsp == null) log.warning 'TX FAILED!'
+      //} else {
+         // back-off and keep trying until modem is idle
+         def rn = AgentLocalRandom.current().nextDouble(0, 1)
+         //println("random of " + myAddress +" is " +rn)
+         
+         if (rn <= p) {
+         // def bo = AgentLocalRandom.current().nextInt(nslots)+1
+        def bo = AgentLocalRandom.current().nextDouble(0,(T-Tp)+1)
+           //def bo = myAddress;
+           println(myAddress +"is waiting for: " +bo +" ms and then it will send to"+ myGateway)
+           add new BackoffBehavior(bo, {
+              def busy1 = phy.busy
+             if (busy1 == null) log.info 'BUSY FAILED!'
+              else if (busy1) {
+                    //def bo1 = AgentLocalRandom.current().nextInt(nslots)+1
+                   println("just to check the chennel is busy but node " + myAddress +" will send anyway, its wait time is " +bo +" ms")
+                  // backoff(bo1*duration)
+                   //println("backoff of " + myAddress +" failed")
+                 } 
+              //  else {
+                  
+                  phy << new ClearReq()
+                  noMessagesSent++
+                  nodeTime= Math.round(nanoTime()/1000000)
+                 fileStats<< "USMARTSensorDaemon  node, "+ myAddress+" ,is  sending, "+ noMessagesSent +" ,"+ nodeTime +" ms \n"
+                 copyFileStats<< "USMARTSensorDaemon  node, "+ myAddress+" ,is  sending, "+ noMessagesSent +" ,"+ nodeTime +" ms \n"
+                 println( "USMARTSensorDaemon  node, "+ myAddress+" with wait time is : "+bo+" is  sending "+ noMessagesSent +"msg to: "+myGateway+" at time: "+ nanoTime() +" ms")
+                 def rsp1 = phy << txReq
+                  if (rsp1 == null) log.info 'TX FAILED!'
+                //}
+          })
+         }
+
+    
   }
 
 

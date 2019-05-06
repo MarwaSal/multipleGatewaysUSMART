@@ -181,9 +181,9 @@ def V=5, Itx = 0.3, Irx = 0.005 //from nanomodem datasheet
 def File fileTrace = new File('.','simulationFinalResults.txt')   
 def File fileStats = new File('.','nodeStats.txt')  
 def runs=[1, 1, 1]
-def pSensingRange = [70, 70, 10]
+def pSensingRange = [50, 50, 10]
 //def nSlotsRange = [10, 100, 10]
-def nSlotsRange = [50, 50, 10]
+def nSlotsRange = [2000, 2000, 10]
 def gatewayDeamon 
 
 
@@ -192,9 +192,9 @@ def gatewayDeamon
 for (pSensing = pSensingRange[0]; pSensing <= pSensingRange[1]; pSensing += pSensingRange[2]) {
   for (nSlots = nSlotsRange[0]; nSlots <= nSlotsRange[1]; nSlots += nSlotsRange[2]) {
     
-   T = (int)Math.round(0.3675*nSlots).seconds   //simulation time in sec the duration of the data packet is 367.5 ms including the header
+   T = (int)Math.ceil(0.3675*nSlots).seconds   //simulation time in sec the duration of the data packet is 367.5 ms including the header
   //  T = 28000  //REQ time is 28380.6815 s
-
+   
     
     fileTrace<<"\n\n"<<"Start scenario: P= "<<pSensing<<"  nSlots= "<<nSlots<<"  T= "<<T<<" s"<<"\n"
     fileTrace<<"-------------------------------------------------------------------------------------------------------------------------"<<"\n"<<"\n"
@@ -225,7 +225,7 @@ for (pSensing = pSensingRange[0]; pSensing <= pSensingRange[1]; pSensing += pSen
         }   
    */
         nodes.each { myAddr ->
-            def sensorNode = new USMARTSensorDaemon( nodeGateway[myAddr])
+            def sensorNode = new USMARTSensorDaemon( nodeGateway[myAddr], pSensing, nSlots)
             def myNode = node("${myAddr}", address: myAddr, location: nodeLocation[myAddr], 
             stack: {  container -> 
               container.add 'sense '+myAddr, sensorNode}
@@ -281,10 +281,12 @@ for (pSensing = pSensingRange[0]; pSensing <= pSensingRange[1]; pSensing += pSen
     Etx = Math.floor(avgSent)*(Ptx*0.3675)
     energyAll =  (Math.floor(avgSent)*(Ptx*0.3675)) + (Math.floor(avgReceived)*(Prx*0.3675)) // total energy consumed for all the packets sent and received throughout the simulation
     EtxSubset = Math.floor(avgTxCountNs)*(Ptx*0.3675) // energy consumed in transmitiing 25% of packets in Joul
+    bytesDelivered = Math.floor(avgReceived)* modem.frameLength[1]
+    JPerBit = energyAll/(bytesDelivered * 8)
     
     if (avgTxCountNs > 0){
        Erx = Math.floor(0.25*200)*(Prx*0.3675) //energy consumed in receving 25% of packets in Joul
-       Etotal =  Etx+Erx  //Total consumed energy in Joul
+       Etotal =  EtxSubset+Erx  //Total consumed energy in Joul
        bytesDelivered = Math.floor(0.25*200)* modem.frameLength[1]
        JPerBit = Etotal/(bytesDelivered * 8)
        }
@@ -299,9 +301,9 @@ for (pSensing = pSensingRange[0]; pSensing <= pSensingRange[1]; pSensing += pSen
     fileTrace<<"Total energy consumed for all packets sent and received = "<<"      "<<energyAll<<" (J)"<<"\n"
     fileTrace<<"Num of nodes participated in sending 25% of packets is = "<<"       "<<Math.floor(avgTxCountNs)<<"\n"
     fileTrace<<"25% of measurements received at = "<<"                              "<<avgTime<<" (ms) "<<"\n" 
-    fileTrace<<"Energy consumed in transmitting (only) 25% of msgs= "<<"      "<<Etx<<" (J)"<<"\n"
+    fileTrace<<"Energy consumed in transmitting (only) 25% of msgs= "<<"      "<<EtxSubset<<" (J)"<<"\n"
     fileTrace<<"Total energy consumed in sending and receiving 25% of msgs= "<<"    "<<Etotal<<" (J)"<<"\n"
-    fileTrace<<"Energy per bit for 25% sent packets= "<<"                           "<<JPerBit<<" (J/bit)"<<"\n"
+    fileTrace<<"Energy per bit for received packets= "<<"                           "<<JPerBit<<" (J/bit)"<<"\n"
     
     
     

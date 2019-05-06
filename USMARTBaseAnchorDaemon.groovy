@@ -25,7 +25,7 @@ class USMARTBaseAnchorDaemon extends UnetAgent {
   def allNodes=0, gatewaySubsetOfNodes =0, subsetRandomAccess =0, maxNum=20
   
  // def lines
-  public int noMessagesReceived
+  public int noMessagesReceived =0
   public double time
   public double time2
   public int txCountNs
@@ -94,7 +94,7 @@ class USMARTBaseAnchorDaemon extends UnetAgent {
           TDA()
         }
         
-
+/*
     else if (pSensing > 0) {
       add new OneShotBehavior({
         
@@ -112,7 +112,8 @@ class USMARTBaseAnchorDaemon extends UnetAgent {
         sense(this.pSensing, this.nSlots)
       
      })  
-    }
+    
+    */
       
     add new MessageBehavior(GenericMessage, { req ->
       //println("In USMARTBaseAnchorDaemon::MessageBehavior req ="+req)
@@ -158,7 +159,7 @@ class USMARTBaseAnchorDaemon extends UnetAgent {
         fileFrames << "USMARTBaseAnchorDaemon "+ myAddress+" receiving "+ k +" message from " + msg.from +" protocol is "+ msg.protocol +" node time is "+nanoTime()+"\n"
         k++
         noMessagesReceived++
-        /*
+        
         if ((noMessagesReceived >= (0.25*200)) && (c==0)){
         time = nanoTime()
         time2 =  Math.round(nanoTime()/1000000)
@@ -168,7 +169,7 @@ class USMARTBaseAnchorDaemon extends UnetAgent {
         fileFrames << "USMARTBaseAnchorDaemon "+ myAddress+" receiving "+ k +" i.e 25% of the mesurements from " + msg.from +" protocol is "+ msg.protocol +" node time is "+ nanoTime() +" ms and num of nodes participated: "+ txCountNs+"\n"
         fileStats.delete()
         c++
-        } */
+        } 
    }
   }
 
