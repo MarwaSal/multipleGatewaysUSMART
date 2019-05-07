@@ -313,12 +313,12 @@ T4: 1532242546248dtD: 41.647 in (2000.0, 2000.0, -500.0 )
                  } 
               //  else {
                   
-                  phy << new ClearReq()
+                 // phy << new ClearReq()
                   noMessagesSent++
                   nodeTime= Math.round(nanoTime()/1000000)
                  fileStats<< "USMARTSensorDaemon  node, "+ myAddress+" ,is  sending, "+ noMessagesSent +" ,"+ nodeTime +" ms \n"
                  copyFileStats<< "USMARTSensorDaemon  node, "+ myAddress+" ,is  sending, "+ noMessagesSent +" ,"+ nodeTime +" ms \n"
-                 println( "USMARTSensorDaemon  node, "+ myAddress+" with wait time is : "+bo+" is  sending "+ noMessagesSent +"msg to: "+myGateway+" at time: "+ nanoTime() +" ms")
+                 println( "USMARTSensorDaemon  node, "+ myAddress+" with wait time is : "+bo+" is  sending "+ noMessagesSent +"msg to: "+myGateway+" at time: "+ nanoTime())
                  def rsp1 = phy << txReq
                   if (rsp1 == null) log.info 'TX FAILED!'
                 //}

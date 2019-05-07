@@ -154,11 +154,13 @@ class USMARTBaseAnchorDaemon extends UnetAgent {
      
     
    if (msg instanceof DatagramNtf) {
-        
-        println("USMARTBaseAnchorDaemon "+ myAddress+" receiving message from " + msg.from +" protocol is "+ msg.protocol +" node time is "+ nanoTime())
-        fileFrames << "USMARTBaseAnchorDaemon "+ myAddress+" receiving "+ k +" message from " + msg.from +" protocol is "+ msg.protocol +" node time is "+nanoTime()+"\n"
+        noMessagesReceived ++
         k++
-        noMessagesReceived++
+        println("USMARTBaseAnchorDaemon "+ myAddress+" receiving message "+noMessagesReceived+" from " + msg.from +" protocol is "+ msg.protocol +" node time is "+ nanoTime())
+        fileFrames << "USMARTBaseAnchorDaemon "+ myAddress+" receiving "+ k +" message from " + msg.from +" protocol is "+ msg.protocol +" node time is "+nanoTime()+"\n"
+        
+        
+        
         
         if ((noMessagesReceived >= (0.25*200)) && (c==0)){
         time = nanoTime()

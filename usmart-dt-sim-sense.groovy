@@ -155,6 +155,7 @@ nodes.each { myAddr ->
 
 
 def listSensorNodes = []
+def listGatewayNodes = []
 def pSensing
 def nSlots 
 def T
@@ -181,9 +182,9 @@ def V=5, Itx = 0.3, Irx = 0.005 //from nanomodem datasheet
 def File fileTrace = new File('.','simulationFinalResults.txt')   
 def File fileStats = new File('.','nodeStats.txt')  
 def runs=[1, 1, 1]
-def pSensingRange = [50, 50, 10]
+def pSensingRange = [100, 100, 10]
 //def nSlotsRange = [10, 100, 10]
-def nSlotsRange = [2000, 2000, 10]
+def nSlotsRange = [50, 50, 10]
 def gatewayDeamon 
 
 
@@ -208,6 +209,7 @@ for (pSensing = pSensingRange[0]; pSensing <= pSensingRange[1]; pSensing += pSen
     
     for (def i= runs[0]; i <= runs[1]; i += runs[2]){
      def sumMsgSent = 0
+     def sumMsgRec =0
      
       simulate T, {
 
@@ -216,14 +218,19 @@ for (pSensing = pSensingRange[0]; pSensing <= pSensingRange[1]; pSensing += pSen
                ii.noMessagesSent  =0
           }
 
-        /*   no need for anchores in single or multiple gateways sensing
+          
+         listGatewayNodes.eachWithIndex { iii, index -> // `it` is the current element, while `i` is the index
+               iii.noMessagesReceived =0
+          }
+
+          
         beacons.each { myAddr ->
             def myNode = node("${myAddr}", address: myAddr, location: nodeLocation[myAddr], 
             stack: {  container ->  
               container.add 'anchor ', new USMARTAnchorDaemon()}
             )
         }   
-   */
+   
         nodes.each { myAddr ->
             def sensorNode = new USMARTSensorDaemon( nodeGateway[myAddr], pSensing, nSlots)
             def myNode = node("${myAddr}", address: myAddr, location: nodeLocation[myAddr], 
@@ -234,18 +241,25 @@ for (pSensing = pSensingRange[0]; pSensing <= pSensingRange[1]; pSensing += pSen
           listSensorNodes.add(sensorNode)
         }
 
+
+    /*
         def gateway = node '1', address: 1, location: nodeLocation[1], shell: true, stack: { container ->
             gatewayDeamon = new USMARTBaseAnchorDaemon(pSensing, nSlots) 
             container.add 'gateway', gatewayDeamon  
         }
+
+        */
+      
    // this is for multiple gateways scenario
        gateways.each { myAddr ->
             def gatewayNode = new USMARTBaseAnchorDaemon(pSensing, nSlots) 
-            def myNode = node("${myAddr}", address: myAddr, location: nodeLocation[myAddr], 
+            def gateway = node("${myAddr}", address: myAddr, location: nodeLocation[myAddr], 
             stack: {  container ->  
               container.add 'gateway ', gatewayNode}
             )
+            listGatewayNodes.add(gatewayNode)
         }   
+
         
      }
     
@@ -254,17 +268,25 @@ for (pSensing = pSensingRange[0]; pSensing <= pSensingRange[1]; pSensing += pSen
      
          
     }
+
+     listGatewayNodes.eachWithIndex { it, index -> // `it` is the current element, while `i` is the index
+      sumMsgRec = sumMsgRec +  it.noMessagesReceived
+     
+         
+    }
+
+
     
-      loss = sumMsgSent ? 100*(sumMsgSent-gatewayDeamon.noMessagesReceived)/sumMsgSent : 0
+      loss = sumMsgSent ? 100*(sumMsgSent-sumMsgRec)/sumMsgSent : 0
      
      
-      fileTrace <<pSensing<<"   "<<nSlots<<"       "<<sumMsgSent<<"        " <<gatewayDeamon.noMessagesReceived <<"       "<<loss<<"                    "<<"                 "<<gatewayDeamon.txCountNs<<"               "<<gatewayDeamon.time2<<"\n" 
+      fileTrace <<pSensing<<"   "<<nSlots<<"       "<<sumMsgSent<<"        " <<sumMsgRec <<"       "<<loss<<"                    "<<"             "<<"\n" 
       
       totalSent = totalSent+sumMsgSent
-      totalReceived = totalReceived+gatewayDeamon.noMessagesReceived
+      totalReceived = totalReceived+sumMsgRec
       totalLossRate= totalLossRate + loss
-      totalTime = totalTime+gatewayDeamon.time2
-      totalTxCountNs =  totalTxCountNs + gatewayDeamon.txCountNs
+     // totalTime = totalTime+gatewayDeamon.time2
+     // totalTxCountNs =  totalTxCountNs + gatewayDeamon.txCountNs
       
       fileStats.delete()
     }   
@@ -274,23 +296,24 @@ for (pSensing = pSensingRange[0]; pSensing <= pSensingRange[1]; pSensing += pSen
     avgSent = totalSent/runs[1]
     avgReceived=totalReceived/runs[1]
     avgLossRate= totalLossRate/runs[1]
-    avgTxCountNs = totalTxCountNs/runs[1]
-    avgTime = totalTime/runs[1]
+   // avgTxCountNs = totalTxCountNs/runs[1]
+   // avgTime = totalTime/runs[1]
     Ptx=  V*Itx //power consumed in transmission in watt
     Prx = V*Irx //power consumed in receiving packets in watt
     Etx = Math.floor(avgSent)*(Ptx*0.3675)
     energyAll =  (Math.floor(avgSent)*(Ptx*0.3675)) + (Math.floor(avgReceived)*(Prx*0.3675)) // total energy consumed for all the packets sent and received throughout the simulation
-    EtxSubset = Math.floor(avgTxCountNs)*(Ptx*0.3675) // energy consumed in transmitiing 25% of packets in Joul
+  //  EtxSubset = Math.floor(avgTxCountNs)*(Ptx*0.3675) // energy consumed in transmitiing 25% of packets in Joul
     bytesDelivered = Math.floor(avgReceived)* modem.frameLength[1]
     JPerBit = energyAll/(bytesDelivered * 8)
-    
+    /*
     if (avgTxCountNs > 0){
        Erx = Math.floor(0.25*200)*(Prx*0.3675) //energy consumed in receving 25% of packets in Joul
        Etotal =  EtxSubset+Erx  //Total consumed energy in Joul
        bytesDelivered = Math.floor(0.25*200)* modem.frameLength[1]
        JPerBit = Etotal/(bytesDelivered * 8)
        }
-   
+
+   */
     
     fileTrace<<"Average results of "<<runs[1]<<" experiments for scenario:  P= "<<pSensing<<"  nSlots= "<<nSlots<<"  T = "<<T<<" s "<<"\n"
     fileTrace<<"-------------------------------------------------------------------------------------------------------------------------"<<"\n"<<"\n"
@@ -299,10 +322,10 @@ for (pSensing = pSensingRange[0]; pSensing <= pSensingRange[1]; pSensing += pSen
     fileTrace<<"Packets loss rate= "<<"                                             "<<avgLossRate<<"\n"
     fileTrace<<"Energy consumed in transmitting = "<<"      "<<Etx<<" (J)"<<"\n"
     fileTrace<<"Total energy consumed for all packets sent and received = "<<"      "<<energyAll<<" (J)"<<"\n"
-    fileTrace<<"Num of nodes participated in sending 25% of packets is = "<<"       "<<Math.floor(avgTxCountNs)<<"\n"
-    fileTrace<<"25% of measurements received at = "<<"                              "<<avgTime<<" (ms) "<<"\n" 
-    fileTrace<<"Energy consumed in transmitting (only) 25% of msgs= "<<"      "<<EtxSubset<<" (J)"<<"\n"
-    fileTrace<<"Total energy consumed in sending and receiving 25% of msgs= "<<"    "<<Etotal<<" (J)"<<"\n"
+   // fileTrace<<"Num of nodes participated in sending 25% of packets is = "<<"       "<<Math.floor(avgTxCountNs)<<"\n"
+   // fileTrace<<"25% of measurements received at = "<<"                              "<<avgTime<<" (ms) "<<"\n" 
+    //fileTrace<<"Energy consumed in transmitting (only) 25% of msgs= "<<"      "<<EtxSubset<<" (J)"<<"\n"
+    //fileTrace<<"Total energy consumed in sending and receiving 25% of msgs= "<<"    "<<Etotal<<" (J)"<<"\n"
     fileTrace<<"Energy per bit for received packets= "<<"                           "<<JPerBit<<" (J/bit)"<<"\n"
     
     
@@ -314,8 +337,8 @@ for (pSensing = pSensingRange[0]; pSensing <= pSensingRange[1]; pSensing += pSen
    println """TX Count \tRX Count \tLoss %\t\tnum of nodes sent 25% of mesurements\t\tTime(when gateway received first 25% of mesurements (ms)\tEnergy consumed in sending 25% of mesurements (J)
     --------\t--------\t------\t\t-----------------------------------------\t\t---------------------------------------------\t\t---------------------------------"""
  
-  println sprintf('%7.3f\t\t%7.3f\t\t%5.1f\t\t%7.3f\t\t\t\t\t\t%7.3f\t\t\t\t%7.3f',
-    [Math.floor(avgSent), Math.floor(avgReceived), avgLossRate, Math.floor(avgTxCountNs),  avgTime, Etotal ])  
+  println sprintf('%7.3f\t\t%7.3f\t\t%5.1f\t\t\t\t\t%7.3f',
+    [Math.floor(avgSent), Math.floor(avgReceived), avgLossRate, energyAll ])  
    
 
 
