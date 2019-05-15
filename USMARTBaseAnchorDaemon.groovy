@@ -18,7 +18,7 @@ class USMARTBaseAnchorDaemon extends UnetAgent {
   def nodeInfo
   def File fileFrames
   def File fileStats
-  def t, k = 0, count = 1, i=0, j=0, gt=140000,  x=0, w=0, index=0, v=0, lastNode =0, p1=1
+  def t, k = 0, count = 1, i=0, j=0, gt=18.375,  x=0, w=0, index=0, v=0, lastNode =0, p1=1
   def tp=[], keyTp =[], valueTp =[],keyTx=[],  valueTx =[], DkeyTp=[], DvalueTp=[], DvalueTx=[]
   def propagationDelay = [:], transmissionDelay= [:]
   def sumtp =0
@@ -154,13 +154,13 @@ class USMARTBaseAnchorDaemon extends UnetAgent {
      
     
    if (msg instanceof DatagramNtf) {
-        noMessagesReceived ++
+        noMessagesReceived++
         k++
         println("USMARTBaseAnchorDaemon "+ myAddress+" receiving message "+noMessagesReceived+" from " + msg.from +" protocol is "+ msg.protocol +" node time is "+ nanoTime())
-        fileFrames << "USMARTBaseAnchorDaemon "+ myAddress+" receiving "+ k +" message from " + msg.from +" protocol is "+ msg.protocol +" node time is "+nanoTime()+"\n"
+        fileFrames << "USMARTBaseAnchorDaemon "+ myAddress+" receiving "+ k +" message from " + msg.from +" protocol is "+ msg.protocol +" node time is "+nanoTime()/1000+"\n"
         
         
-        
+        /*
         
         if ((noMessagesReceived >= (0.25*200)) && (c==0)){
         time = nanoTime()
@@ -172,6 +172,7 @@ class USMARTBaseAnchorDaemon extends UnetAgent {
         fileStats.delete()
         c++
         } 
+        */
    }
   }
 

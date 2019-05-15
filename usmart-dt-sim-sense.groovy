@@ -86,9 +86,9 @@ double angleInRadian = Math.toRadians(angleInDegree)
 
 //nodeLocation[1] = [D/2, D/2 , -5.m] // the location of one gatways in one gateway experiments
 // the folowwing locations are for multiple gateways experiments
-nodeLocation[1] = [((D/2)-(1/3)*Math.cos(angleInRadian)*1000), D/2 -L/2, -5.m]
-nodeLocation[2] = [((D/2)-(1/3)*Math.cos(angleInRadian)*1000), D/2 +L/2, -5.m]
-nodeLocation[3] = [((D/2)+(2/3)*Math.cos(angleInRadian)*1000), D/2, -5.m]
+nodeLocation[1] = [((D/2)-(1/3)*Math.cos(angleInRadian)*1000), D/2 -L/2, -D/2]
+nodeLocation[2] = [((D/2)-(1/3)*Math.cos(angleInRadian)*1000), D/2 +L/2, -D/2]
+nodeLocation[3] = [((D/2)+(2/3)*Math.cos(angleInRadian)*1000), D/2, -D/2]
 nodeLocation[4] = [D/2, D/2, -500.m]
 
 
@@ -96,7 +96,7 @@ nodeLocation[4] = [D/2, D/2, -500.m]
 File filex = new File('.','Xlocations_200Nodes.txt')
 File filey = new File('.','Ylocations_200Nodes.txt')
 File filez = new File('.','Zlocations_200Nodes.txt')
-File Gateway = new File('.','nodeGateway.txt')
+//File Gateway = new File('.','nodeGateway.txt')
 
 
 
@@ -142,10 +142,10 @@ nodes.each { myAddr ->
   nodeLocation[myAddr] = [locX, locY, locZ]
   for (addr in gateways){
   gatewayDistance.put(addr, distance(nodeLocation[myAddr], nodeLocation[addr]) )   
-  println " distance between: "+myAddr+" and gateway: "+addr+" is: "+distance(nodeLocation[myAddr], nodeLocation[addr] )
+  //println " distance between: "+myAddr+" and gateway: "+addr+" is: "+distance(nodeLocation[myAddr], nodeLocation[addr] )
 
   }
-   println gatewayDistance.min { it.value }.key
+   //println gatewayDistance.min { it.value }.key
    nodeGateway[myAddr] = gatewayDistance.min { it.value }.key
    //Gateway.append(Integer.toString( nodeGateway[myAddr])) // if i want to save the gatway for each node in a file
    //Gateway<<"\n"
@@ -161,15 +161,18 @@ def nSlots
 def T
 def totalSent = 0
 def totalReceived = 0
+def totalPrecentageReceieved =0
 def totalLossRate= 0
 def totalTime = 0
 def totalTxCountNs =0
 def avgSent = 0
 def avgReceived= 0
+def avgPrecentageReceived  =0
 def avgLossRate=     0
 def avgTime = 0 
 def avgTxCountNs = 0
 float loss
+float precentageReceived 
 float Etotal =0
 float Ptx=  0 //power consumed in transmission in watt
 float Prx = 0 //power consumed in receiving packets in watt
@@ -181,10 +184,10 @@ def V=5, Itx = 0.3, Irx = 0.005 //from nanomodem datasheet
 
 def File fileTrace = new File('.','simulationFinalResults.txt')   
 def File fileStats = new File('.','nodeStats.txt')  
-def runs=[1, 1, 1]
-def pSensingRange = [100, 100, 10]
+def runs=[1, 10, 1]
+def pSensingRange = [10, 100, 10]
 //def nSlotsRange = [10, 100, 10]
-def nSlotsRange = [50, 50, 10]
+def nSlotsRange = [50, 230, 20]
 def gatewayDeamon 
 
 
@@ -194,15 +197,16 @@ for (pSensing = pSensingRange[0]; pSensing <= pSensingRange[1]; pSensing += pSen
   for (nSlots = nSlotsRange[0]; nSlots <= nSlotsRange[1]; nSlots += nSlotsRange[2]) {
     
    T = (int)Math.ceil(0.3675*nSlots).seconds   //simulation time in sec the duration of the data packet is 367.5 ms including the header
-  //  T = 28000  //REQ time is 28380.6815 s
+  
    
     
     fileTrace<<"\n\n"<<"Start scenario: P= "<<pSensing<<"  nSlots= "<<nSlots<<"  T= "<<T<<" s"<<"\n"
     fileTrace<<"-------------------------------------------------------------------------------------------------------------------------"<<"\n"<<"\n"
-    fileTrace<<"p "<<"  "<<"nSlots "<<" "<<"TX Count"<<" "<<"RX Count"<<" "<<"Loss Count"<<"                     "<<"num of nodes sent 25%"<<"    "<<"25% received at (ms)"<<"\n"
-    fileTrace<<"-------------------------------------------------------------------------------------------------------------------------"<<"\n"
+    fileTrace<<"p "<<"  "<<"nSlots "<<" "<<"TX Count"<<" "<<"RX Count"<<" "<<"Loss Count"<<"\n"
+    fileTrace<<"---------------------------------------------------------------------------"<<"\n"
     totalSent = 0
     totalReceived = 0
+    totalPrecentageReceived =0
     totalLossRate= 0
     totalTime = 0
     totalTxCountNs =0
@@ -278,33 +282,36 @@ for (pSensing = pSensingRange[0]; pSensing <= pSensingRange[1]; pSensing += pSen
 
     
       loss = sumMsgSent ? 100*(sumMsgSent-sumMsgRec)/sumMsgSent : 0
-     
+      precentageReceived = sumMsgSent ?(100 * sumMsgRec)/sumMsgSent :0
      
       fileTrace <<pSensing<<"   "<<nSlots<<"       "<<sumMsgSent<<"        " <<sumMsgRec <<"       "<<loss<<"                    "<<"             "<<"\n" 
       
       totalSent = totalSent+sumMsgSent
       totalReceived = totalReceived+sumMsgRec
       totalLossRate= totalLossRate + loss
+      totalPrecentageReceived = totalPrecentageReceived + precentageReceived
      // totalTime = totalTime+gatewayDeamon.time2
      // totalTxCountNs =  totalTxCountNs + gatewayDeamon.txCountNs
       
       fileStats.delete()
     }   
     fileTrace<<"-------------------------------------------------------------------------------------------------------------------------"<<"\n"
-    fileTrace<<"End scenario: P= "<<pSensing<<"  nSlots= "<<nSlots<<"  T = "<<T/1000<<" s "<<totalSent<<"\n\n"
+    fileTrace<<"End scenario: P= "<<pSensing<<"  nSlots= "<<nSlots<<"  T = "<<T<<" s "<<"\n\n"
       
     avgSent = totalSent/runs[1]
     avgReceived=totalReceived/runs[1]
     avgLossRate= totalLossRate/runs[1]
+    avgPrecentageReceived = totalPrecentageReceived /runs[1]
    // avgTxCountNs = totalTxCountNs/runs[1]
    // avgTime = totalTime/runs[1]
     Ptx=  V*Itx //power consumed in transmission in watt
     Prx = V*Irx //power consumed in receiving packets in watt
     Etx = Math.floor(avgSent)*(Ptx*0.3675)
     energyAll =  (Math.floor(avgSent)*(Ptx*0.3675)) + (Math.floor(avgReceived)*(Prx*0.3675)) // total energy consumed for all the packets sent and received throughout the simulation
-  //  EtxSubset = Math.floor(avgTxCountNs)*(Ptx*0.3675) // energy consumed in transmitiing 25% of packets in Joul
+   // EtxSubset = Math.floor(avgTxCountNs)*(Ptx*0.3675) // energy consumed in transmitiing 25% of packets in Joul
     bytesDelivered = Math.floor(avgReceived)* modem.frameLength[1]
     JPerBit = energyAll/(bytesDelivered * 8)
+    
     /*
     if (avgTxCountNs > 0){
        Erx = Math.floor(0.25*200)*(Prx*0.3675) //energy consumed in receving 25% of packets in Joul
@@ -319,26 +326,27 @@ for (pSensing = pSensingRange[0]; pSensing <= pSensingRange[1]; pSensing += pSen
     fileTrace<<"-------------------------------------------------------------------------------------------------------------------------"<<"\n"<<"\n"
     fileTrace<<"Num of packets sent= "<<"                                           "<<Math.floor(avgSent)<<"\n"
     fileTrace<<"Num of packets received= "<<"                                       "<<Math.floor(avgReceived)<<"\n"
-    fileTrace<<"Packets loss rate= "<<"                                             "<<avgLossRate<<"\n"
-    fileTrace<<"Energy consumed in transmitting = "<<"      "<<Etx<<" (J)"<<"\n"
+    fileTrace<<"Precentage of packets received= "<<"                                "<<avgPrecentageReceived<<" % \n"
+    fileTrace<<"Packets loss rate= "<<"                                             "<<avgLossRate<<" % \n"
+    fileTrace<<"Energy consumed in transmitting = "<<"                              "<<Etx<<" (J)"<<"\n"
     fileTrace<<"Total energy consumed for all packets sent and received = "<<"      "<<energyAll<<" (J)"<<"\n"
    // fileTrace<<"Num of nodes participated in sending 25% of packets is = "<<"       "<<Math.floor(avgTxCountNs)<<"\n"
    // fileTrace<<"25% of measurements received at = "<<"                              "<<avgTime<<" (ms) "<<"\n" 
-    //fileTrace<<"Energy consumed in transmitting (only) 25% of msgs= "<<"      "<<EtxSubset<<" (J)"<<"\n"
-    //fileTrace<<"Total energy consumed in sending and receiving 25% of msgs= "<<"    "<<Etotal<<" (J)"<<"\n"
+   // fileTrace<<"Energy consumed in transmitting (only) 25% of msgs= "<<"      "<<EtxSubset<<" (J)"<<"\n"
+   // fileTrace<<"Total energy consumed in sending and receiving 25% of msgs= "<<"    "<<Etotal<<" (J)"<<"\n"
     fileTrace<<"Energy per bit for received packets= "<<"                           "<<JPerBit<<" (J/bit)"<<"\n"
-    
     
     
    
      
    // display statistics
   //float loss = trace.txCount ? 100*trace.dropCount/trace.txCount : 0
-   println """TX Count \tRX Count \tLoss %\t\tnum of nodes sent 25% of mesurements\t\tTime(when gateway received first 25% of mesurements (ms)\tEnergy consumed in sending 25% of mesurements (J)
-    --------\t--------\t------\t\t-----------------------------------------\t\t---------------------------------------------\t\t---------------------------------"""
+  println """TX Count \tRX Count \tLoss %\t\tEnergy consumed in transmitting(J)
+    --------\t--------\t------\t\t-----------------------------------------"""
  
   println sprintf('%7.3f\t\t%7.3f\t\t%5.1f\t\t\t\t\t%7.3f',
-    [Math.floor(avgSent), Math.floor(avgReceived), avgLossRate, energyAll ])  
+    [Math.floor(avgSent), Math.floor(avgReceived), avgLossRate, Etx ])  
+   
    
 
 

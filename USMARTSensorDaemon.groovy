@@ -59,7 +59,7 @@ class USMARTSensorDaemon extends UnetAgent {
    int pSensing = 0
   int nSlots = 0
  
-   USMARTSensorDaemon(myGateway, int pSensing=0, int nSlots=100) {
+   USMARTSensorDaemon(myGateway, int pSensing=0, int nSlots=0) {
     this.myGateway= myGateway 
     this.pSensing = pSensing                        
     this.nSlots = nSlots                              
@@ -84,7 +84,23 @@ class USMARTSensorDaemon extends UnetAgent {
     phy = agentForService Services.PHYSICAL
     subscribe topic(phy)
     duration = Math.round(((phy[Physical.DATA].frameDuration) *1000 ))
-    RAC(myGateway, pSensing, nSlots)
+      add new OneShotBehavior({
+        
+        //  ping(5, 204)
+        
+        // behavior will be executed after all agents are initialized
+        // agent is in RUNNING state
+      
+        //if (nslots != 0)  fileStats << p << " " << nslots << " " << noMessagesReceived << "\n"
+      
+        
+     
+        log.info 'USMARTSensorDaemon::OneShotBehaviour calling RAC('+pSensing+','+nSlots+')...'
+        RAC(myGateway, pSensing, nSlots)
+      
+     })  
+    
+    
   
 
   }
@@ -315,10 +331,10 @@ T4: 1532242546248dtD: 41.647 in (2000.0, 2000.0, -500.0 )
                   
                  // phy << new ClearReq()
                   noMessagesSent++
-                  nodeTime= Math.round(nanoTime()/1000000)
-                 fileStats<< "USMARTSensorDaemon  node, "+ myAddress+" ,is  sending, "+ noMessagesSent +" ,"+ nodeTime +" ms \n"
+                  nodeTime= Math.round(nanoTime()/1000)
+                 fileStats<< "USMARTSensorDaemon  node, "+ myAddress+" is  sending "+ noMessagesSent +" ,"+ nodeTime +" ms \n"
                  copyFileStats<< "USMARTSensorDaemon  node, "+ myAddress+" ,is  sending, "+ noMessagesSent +" ,"+ nodeTime +" ms \n"
-                 println( "USMARTSensorDaemon  node, "+ myAddress+" with wait time is : "+bo+" is  sending "+ noMessagesSent +"msg to: "+myGateway+" at time: "+ nanoTime())
+                 println( "USMARTSensorDaemon  node "+ myAddress+" with wait time is : "+bo+" is  sending "+ noMessagesSent +"msg to: "+myGateway+" at time: "+ nanoTime())
                  def rsp1 = phy << txReq
                   if (rsp1 == null) log.info 'TX FAILED!'
                 //}
