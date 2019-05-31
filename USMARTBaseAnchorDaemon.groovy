@@ -45,10 +45,11 @@ class USMARTBaseAnchorDaemon extends UnetAgent {
     this.nSlots = nSlots                                  
   }
   
-
+/*
   void setup() {
      register 'gateway' 
   }
+  */
   
   void startup() {
     //println "In USMARTBaseAnchorDaemon::startup"

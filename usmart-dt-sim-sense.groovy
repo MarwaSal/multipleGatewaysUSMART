@@ -63,10 +63,10 @@ modem.refPowerLevel   = 168
 //def nodes = 5..10                     // list of nodes, just one to begin with
 //def  nodes = 5..204               // list of nodes, just one to begin with, we have 400 grids in an area of 10000.m x10000.m, grid size is 0.5.m x 0.5, so we have 400 grids with 400 sensors
 
-def  nodes = 5..204
+def  nodes = 5..204 // ORG..5..204 ... for 9 gateways in agrid : 10..209
 // generate random network geometry
 def beacons = 2..4 // for only one gateway and 4 anchors
-def gateways = 1..4 // for multiple gateways code
+def gateways = 1..2 // for multiple gateways code... for 9 gateways its 1..9
 def nodeLocation = [:]
 def gatewayDistance = [:]
 def nodeGateway = [:]
@@ -80,18 +80,53 @@ def strz=0
 
 //th problem from the distance and the number of nodes.. 100 nodes in 10000m will not work as nodes cant reach gateway,,,  225 in 4000. m distance didnt work eithor as there is a lot of collision
 def D =  4000.m //10000.m  // side of the simulation area
-def L =  400.m //1000.m  // distance between two node
+def L =  3500.m //1000.m  // distance between two node //was 400 for the triangle
 double angleInDegree = 30
 double angleInRadian = Math.toRadians(angleInDegree)
 
 //nodeLocation[1] = [D/2, D/2 , -5.m] // the location of one gatways in one gateway experiments
 // the folowwing locations are for multiple gateways experiments
-nodeLocation[1] = [((D/2)-(1/3)*Math.cos(angleInRadian)*1000), D/2 -L/2, -D/2]
-nodeLocation[2] = [((D/2)-(1/3)*Math.cos(angleInRadian)*1000), D/2 +L/2, -D/2]
-nodeLocation[3] = [((D/2)+(2/3)*Math.cos(angleInRadian)*1000), D/2, -D/2]
-nodeLocation[4] = [D/2, D/2, -500.m]
+
+/*
+// The following is the location of gateways in the traingle
+
+nodeLocation[1] = [((D/2)-(1/3)*Math.cos(angleInRadian)*3500), D/2 -L/2, -100.m]
+nodeLocation[2] = [((D/2)-(1/3)*Math.cos(angleInRadian)*3500), D/2 +L/2, -100.m]
+nodeLocation[3] = [((D/2)+(2/3)*Math.cos(angleInRadian)*3500), D/2, -100.m]
+//nodeLocation[4] = [D/2, D/2, -490.m]
+
+*/
+
+//println distance(nodeLocation[1], nodeLocation[2] )+ " " +distance(nodeLocation[2], nodeLocation[3] )+" "+distance(nodeLocation[3], nodeLocation[1] )
 
 
+//The following are the locations of two gatways on the corners of the field
+nodeLocation[1] = [D/4, D/4, -490.m]
+nodeLocation[2] = [D-(D/4), D-(D/4), -490.m]
+
+
+/*
+//The following are the locations of four gatways on the corners of the field
+nodeLocation[1] = [D/4, D/4, -490.m]
+nodeLocation[2] = [D/4, D-(D/4), -490.m]
+nodeLocation[3] = [D-(D/4), D/4, -490.m]
+nodeLocation[4] = [D-(D/4), D-(D/4), -490.m]
+*/
+
+/*
+ The following is the location of 9 gateways in a grid of 9 cells
+
+nodeLocation[1] = [D/6, D/6 , -100.m]
+nodeLocation[2] = [(D/3+D/6), D/6 , -100.m]
+nodeLocation[3] = [(D/3+D/3+D/6),D/6 , -100.m]
+nodeLocation[4] = [D/6,(D/3+D/6) , -100.m]
+nodeLocation[5] = [(D/3+D/6),(D/3+D/6) , -100.m]
+nodeLocation[6] = [(D/3+D/3+D/6),(D/3+D/6) , -100.m]
+nodeLocation[7] = [D/6,(D/3+D/3+D/6) , -100.m]
+nodeLocation[8] = [(D/3+D/6),(D/3+D/3+D/6) , -100.m]
+nodeLocation[9] = [(D/3+D/3+D/6),(D/3+D/3+D/6) , -100.m]
+
+*/
 
 File filex = new File('.','Xlocations_200Nodes.txt')
 File filey = new File('.','Ylocations_200Nodes.txt')
@@ -142,10 +177,10 @@ nodes.each { myAddr ->
   nodeLocation[myAddr] = [locX, locY, locZ]
   for (addr in gateways){
   gatewayDistance.put(addr, distance(nodeLocation[myAddr], nodeLocation[addr]) )   
-  //println " distance between: "+myAddr+" and gateway: "+addr+" is: "+distance(nodeLocation[myAddr], nodeLocation[addr] )
+ // println " distance between: "+myAddr+" and gateway: "+addr+" is: "+distance(nodeLocation[myAddr], nodeLocation[addr] )
 
   }
-   //println gatewayDistance.min { it.value }.key
+ //  println gatewayDistance.min { it.value }.key
    nodeGateway[myAddr] = gatewayDistance.min { it.value }.key
    //Gateway.append(Integer.toString( nodeGateway[myAddr])) // if i want to save the gatway for each node in a file
    //Gateway<<"\n"
@@ -185,9 +220,8 @@ def V=5, Itx = 0.3, Irx = 0.005 //from nanomodem datasheet
 def File fileTrace = new File('.','simulationFinalResults.txt')   
 def File fileStats = new File('.','nodeStats.txt')  
 def runs=[1, 10, 1]
-def pSensingRange = [10, 100, 10]
-//def nSlotsRange = [10, 100, 10]
-def nSlotsRange = [50, 230, 20]
+def pSensingRange = [30, 30, 10]
+def nSlotsRange = [50, 230, 20]    //230
 def gatewayDeamon 
 
 
